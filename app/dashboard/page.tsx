@@ -38,13 +38,9 @@ export default async function DashboardPage() {
           </h2>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {stats.map((stat) => (
-              <a key={stat.label} href={stat.href} className="fx-card-raised p-4 transition hover:border-accent">
-                <p className="text-xs font-medium tracking-wide text-ink-muted uppercase">
-                  {stat.label}
-                </p>
-                <p className="mt-2 font-mono text-3xl font-semibold text-accent">
-                  {stat.value}
-                </p>
+              <a key={stat.label} href={stat.href} className="fx-stat">
+                <p className="fx-eyebrow">{stat.label}</p>
+                <p className="fx-value mt-2 text-3xl text-ink">{stat.value}</p>
               </a>
             ))}
           </div>
@@ -82,7 +78,10 @@ export default async function DashboardPage() {
             <h2 id="recent-heading" className="text-sm font-semibold">
               Recent lab runs
             </h2>
-            <a href="/labcoach" className="text-xs text-accent hover:text-accent-hover">
+            <a
+              href="/labcoach"
+              className="text-xs font-medium text-accent-bright underline decoration-accent/40 underline-offset-4 transition hover:decoration-accent"
+            >
               Open lab coach
             </a>
           </div>

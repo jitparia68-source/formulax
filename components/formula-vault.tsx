@@ -142,7 +142,7 @@ export function FormulaVault({
             return (
               <li key={formula.slug} className="fx-card-raised flex flex-col p-5">
                 <div className="flex items-start justify-between gap-3">
-                  <span className="fx-chip pointer-events-none">
+                  <span className="fx-chip pointer-events-none cursor-default">
                     {formula.category}
                   </span>
                   <button
@@ -173,7 +173,7 @@ export function FormulaVault({
 
                 <h3 className="mt-3 font-medium text-ink">{formula.title}</h3>
 
-                <div className="fx-card my-4 px-3 py-4">
+                <div className="my-4">
                   <MathFormula latex={formula.latex} />
                 </div>
 
@@ -186,7 +186,7 @@ export function FormulaVault({
                     href={formula.reference_url}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="mt-3 truncate text-xs text-accent hover:text-accent-hover"
+                    className="mt-3 truncate text-xs font-medium text-accent-bright hover:text-accent-hover"
                   >
                     Reference &nearr;
                   </a>

@@ -129,9 +129,7 @@ export function MultiVariableSolver({ formulas }: Props) {
 
   if (solvable.length === 0) {
     return (
-      <p className="fx-card px-6 py-10 text-center text-sm text-ink-muted">
-        No solvable formulas are available yet.
-      </p>
+      <p className="fx-empty">No solvable formulas are available yet.</p>
     );
   }
 
@@ -219,7 +217,7 @@ export function MultiVariableSolver({ formulas }: Props) {
         </div>
 
         {selected ? (
-          <div className="fx-card mt-4 px-4 py-5">
+          <div className="mt-4">
             <MathFormula latex={selected.latex} />
             <p className="mt-2 text-sm text-ink-muted">{selected.description}</p>
           </div>
@@ -263,10 +261,10 @@ export function MultiVariableSolver({ formulas }: Props) {
         <div aria-live="polite" className="mt-4">
           {result?.ok ? (
             <div className="fx-result">
-              <p className="text-xs tracking-wide text-ink-muted uppercase">
+              <p className="fx-eyebrow">
                 {meta?.vars[effectiveTarget ?? ""]}
               </p>
-              <p className="mt-1 font-mono text-2xl font-semibold text-accent">
+              <p className="fx-value mt-1 text-2xl text-secondary">
                 {result.value.toFixed(4)}
               </p>
             </div>
@@ -340,7 +338,7 @@ function ChallengePanel({ formulas }: Props) {
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {Object.entries(challenge.values).map(([variable, value]) => (
-              <div key={variable} className="fx-card px-3 py-2">
+              <div key={variable} className="rounded-input border border-line bg-surface-1 px-3 py-2">
                 <p className="text-xs text-ink-muted">
                   {challenge.formula.solver_meta?.vars[variable]}
                 </p>

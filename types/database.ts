@@ -1,11 +1,3 @@
-export type UserRow = {
-  id: string;
-  name: string;
-  email: string;
-  password_hash: string;
-  created_at: string;
-};
-
 export type FormulaCategory =
   | "Calculus"
   | "Linear Algebra"
@@ -22,6 +14,10 @@ export type SolverMeta = {
   solve: Record<string, string>;
 };
 
+/**
+ * `user_id` holds a Clerk user id (a string like `user_2abc...`), which is why the
+ * column is TEXT rather than UUID. There is no local user table: Clerk owns identity.
+ */
 export type FormulaRow = {
   id: string;
   user_id: string | null;

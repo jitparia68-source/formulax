@@ -1,9 +1,8 @@
 "use server";
 
-import { hash } from "bcryptjs";
+import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
-import { auth } from "@/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import {
   isFormulaCategory,
@@ -16,10 +15,6 @@ export type ActionResult<T = undefined> =
   | { success: false; error: string };
 
 const POSTGRES_UNIQUE_VIOLATION = "23505";
-const BCRYPT_ROUNDS = 10;
-const MIN_PASSWORD_LENGTH = 8;
-const MAX_PASSWORD_LENGTH = 200;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REFERENCE_URL_PATTERN = /^https?:\/\/[^\s]+$/i;
 const MAX_LAB_READINGS = 500;
 const FORMULA_CATEGORIES = [
@@ -40,24 +35,13 @@ function toClientError(context: string, error: unknown): string {
 }
 
 async function requireUserId(): Promise<string | null> {
-  const session = await auth();
-  return session?.user?.id ?? null;
+  const { userId } = await auth();
+  return userId ?? null;
 }
 
 function readString(formData: FormData, field: string): string {
   const value = formData.get(field);
   return typeof value === "string" ? value.trim() : "";
-}
-
-function validateEmail(email: string): boolean {
-  return email.length <= 254 && EMAIL_PATTERN.test(email);
-}
-
-function validatePassword(password: string): boolean {
-  return (
-    password.length >= MIN_PASSWORD_LENGTH &&
-    password.length <= MAX_PASSWORD_LENGTH
-  );
 }
 
 function validateLatex(latex: string): boolean {
@@ -70,56 +54,6 @@ function validateDescription(description: string): boolean {
 
 function validateReferenceUrl(url: string): boolean {
   return url.length <= 2048 && REFERENCE_URL_PATTERN.test(url);
-}
-
-export async function registerUserAction(
-  formData: FormData,
-): Promise<ActionResult<{ email: string }>> {
-  const name = readString(formData, "name");
-  const email = readString(formData, "email").toLowerCase();
-  const password = readString(formData, "password");
-
-  if (name.length < 1 || name.length > 120) {
-    return { success: false, error: "Enter a name between 1 and 120 characters." };
-  }
-  if (!validateEmail(email)) {
-    return { success: false, error: "Enter a valid email address." };
-  }
-  if (!validatePassword(password)) {
-    return {
-      success: false,
-      error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`,
-    };
-  }
-
-  const { data: existing } = await supabaseAdmin
-    .from("users")
-    .select("id")
-    .eq("email", email)
-    .maybeSingle<{ id: string }>();
-
-  if (existing) {
-    return { success: false, error: "Email is already registered." };
-  }
-
-  const passwordHash = await hash(password, BCRYPT_ROUNDS);
-
-  const { error } = await supabaseAdmin.from("users").insert({
-    name,
-    email,
-    password_hash: passwordHash,
-  });
-
-  if (error) {
-    // A concurrent registration can win the race after the SELECT above; the unique
-    // index is the real arbiter, so its violation is a duplicate-email, not a fault.
-    if (error.code === POSTGRES_UNIQUE_VIOLATION) {
-      return { success: false, error: "Email is already registered." };
-    }
-    return { success: false, error: toClientError("register user", error) };
-  }
-
-  return { success: true, data: { email } };
 }
 
 export async function addCustomFormulaAction(

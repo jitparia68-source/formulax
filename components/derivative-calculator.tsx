@@ -97,11 +97,9 @@ export function DerivativeCalculator() {
         ) : null}
 
         {result ? (
-          <div className="fx-result">
-            <p className="text-xs tracking-wide text-ink-muted uppercase">
-              f&prime;(x)
-            </p>
-            <MathFormula latex={result.latex} className="mt-2" />
+<div className="fx-result">
+              <p className="fx-eyebrow">f&prime;(x)</p>
+              <MathFormula latex={result.latex} className="mt-2" />
             <ol className="mt-4 flex list-decimal flex-col gap-1 pl-5 font-mono text-xs text-ink-muted">
               {result.steps.map((step) => (
                 <li key={step}>{step}</li>

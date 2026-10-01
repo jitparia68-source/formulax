@@ -107,10 +107,8 @@ export function MatrixCalculator() {
         <div className="flex-1" aria-live="polite">
           {result ? (
             <div className="fx-result">
-              <p className="text-xs tracking-wide text-ink-muted uppercase">
-                Determinant
-              </p>
-              <p className="mt-1 font-mono text-2xl font-semibold text-accent">
+              <p className="fx-eyebrow">Determinant</p>
+              <p className="fx-value mt-1 text-2xl text-secondary">
                 {result.determinant.toFixed(4)}
               </p>
               {result.determinant === 0 ? (
@@ -129,9 +127,7 @@ export function MatrixCalculator() {
               </ol>
             </div>
           ) : (
-            <p className="fx-card px-4 py-6 text-center text-sm text-ink-muted">
-              Enter the matrix entries, then calculate.
-            </p>
+            <p className="fx-empty">Enter the matrix entries, then calculate.</p>
           )}
         </div>
       </div>

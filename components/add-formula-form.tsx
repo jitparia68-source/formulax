@@ -148,7 +148,7 @@ export function DeleteFormulaButton({ slug, title }: { slug: string; title: stri
         type="submit"
         disabled={isPending}
         aria-label={`Delete ${title}`}
-        className="fx-btn fx-btn-ghost px-2 text-danger hover:text-danger disabled:opacity-50"
+        className="fx-btn fx-btn-ghost px-2 text-danger-bright hover:text-danger disabled:opacity-50"
       >
         <svg
           viewBox="0 0 24 24"

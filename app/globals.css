@@ -1,26 +1,71 @@
 @import "tailwindcss";
 @import "katex/dist/katex.min.css";
 
+/*
+  Elevation ladder, darkest to lightest:
+    chrome      app frame: sidebar, drawer, header
+    surface-0   page canvas
+    surface-1   recessed: inputs, equation wells, result panels
+    surface-2   card
+    surface-3   raised card, secondary button, chip
+    surface-4   top of stack: chip hover
+  Depth is carried by a 4-7% inset top highlight plus a wide, very soft drop shadow.
+  The 1px border is demoted to an edge definition, not the primary separator.
+*/
 @theme {
-  --color-surface-0: #070b14;
-  --color-surface-1: #0d1424;
-  --color-surface-2: #131c30;
-  --color-surface-3: #1b2740;
-  --color-line: #24334f;
-  --color-line-strong: #33456b;
+  --color-chrome: #070a11;
+  --color-surface-0: #0b0f19;
+  --color-surface-1: #121826;
+  --color-surface-2: #161d2e;
+  --color-surface-3: #232e45;
+  --color-surface-4: #2b3750;
 
-  --color-ink: #eef2fb;
-  --color-ink-muted: #94a3c4;
-  --color-ink-faint: #64748f;
+  --color-line: #222d44;
+  --color-line-soft: #1a2132;
+  --color-line-strong: #3a4763;
+  --color-hairline: rgb(255 255 255 / 0.12);
 
-  --color-accent: #6c5ce7;
-  --color-accent-hover: #8374f0;
-  --color-accent-soft: #6c5ce71f;
-  --color-accent-ring: #6c5ce766;
+  --color-ink: #f2f5fc;
+  --color-ink-muted: #adbad2;
+  --color-ink-faint: #94a1be;
 
-  --color-success: #34d399;
-  --color-warning: #fbbf24;
-  --color-danger: #f87171;
+  /*
+    Accent family, three clearly separated roles:
+      accent / accent-bright   primary action only (fills, focus rings, borders)
+      accent-bright             the readable text weight of the same hue
+      secondary                 computed values, results and important numbers
+    A primary button and an important number therefore never share a colour.
+  */
+  --color-accent: #7c8aff;
+  --color-accent-bright: #b3bbff;
+  --color-accent-hover: #cbd0ff;
+  --color-accent-deep: #0b0f19;
+  --color-accent-soft: #7c8aff24;
+  --color-accent-ring: #7c8aff5c;
+
+  --color-secondary: #34d3c0;
+  --color-tertiary: #f5a524;
+
+  --color-success: #3ddc97;
+  --color-warning: #f5b544;
+  --color-danger: #ff7a7a;
+  --color-danger-bright: #ffb4b4;
+
+  /*
+    Plot surfaces stay deliberately light: function-plot paints its axes, ticks and
+    labels with `currentColor` and its origin rules with black, so a dark canvas would
+    hide them. Tinting the light surface ties it to the app instead of reading as a
+    foreign white box.
+  */
+  --color-plot: #eef1f8;
+  --color-plot-ink: #333c52;
+  --color-plot-line: #4f5ce0;
+  --color-plot-grid: #7c88a3;
+  --color-plot-point: #0d8f6f;
+
+  --shadow-panel: inset 0 1px 0 0 rgb(255 255 255 / 0.045), 0 1px 2px rgb(2 5 12 / 0.5), 0 10px 30px -18px rgb(2 5 12 / 0.9);
+  --shadow-raised: inset 0 1px 0 0 rgb(255 255 255 / 0.06), 0 2px 6px rgb(2 5 12 / 0.45), 0 20px 46px -24px rgb(2 5 12 / 0.95);
+  --shadow-float: inset 0 1px 0 0 rgb(255 255 255 / 0.07), 0 10px 24px -8px rgb(2 5 12 / 0.6), 0 36px 64px -28px rgb(2 5 12 / 0.95);
 
   --radius-card: 0.875rem;
   --radius-input: 0.625rem;
@@ -40,60 +85,257 @@
 
   body {
     background-color: var(--color-surface-0);
+    /* A single very faint accent wash behind the frame, so the darkest surface is not flat. */
+    background-image: radial-gradient(
+      120% 70% at 50% -12%,
+      color-mix(in oklab, var(--color-accent) 8%, transparent),
+      transparent 62%
+    );
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
 
-  /* A single visible focus treatment for every interactive element, including the
-     hand-rolled controls the design system does not style. */
+  /* One focus treatment for every interactive element, including the hand-rolled
+     controls the design system does not style. The soft halo keeps the ring legible
+     when it lands on a bright accent fill; the outline follows each element's own
+     border radius. */
   :focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
-    border-radius: 0.25rem;
+    box-shadow: 0 0 0 5px color-mix(in oklab, var(--color-accent) 24%, transparent);
   }
 
   ::selection {
     background-color: var(--color-accent-ring);
+    color: var(--color-ink);
+  }
+
+  /* Native dropdown menus are not styled by .fx-select and default to a light list. */
+  select option {
+    background-color: var(--color-surface-2);
+    color: var(--color-ink);
+  }
+
+  /* Numbers should not shuffle sideways while a value updates. */
+  input[type="number"] {
+    accent-color: var(--color-accent);
   }
 }
 
 @layer components {
+  /* ---------------------------------------------------------------- surfaces */
+
   .fx-card {
-    background-color: var(--color-surface-1);
+    background-color: var(--color-surface-2);
     border: 1px solid var(--color-line);
     border-radius: var(--radius-card);
+    box-shadow: var(--shadow-panel);
   }
 
   .fx-card-raised {
+    background-color: var(--color-surface-2);
     background-image: linear-gradient(
       to bottom,
-      color-mix(in oklab, var(--color-surface-2) 70%, transparent),
-      var(--color-surface-1)
+      rgb(255 255 255 / 0.045),
+      rgb(255 255 255 / 0) 55%
     );
     border: 1px solid var(--color-line);
     border-radius: var(--radius-card);
-    box-shadow: 0 1px 0 0 color-mix(in oklab, white 4%, transparent) inset;
+    box-shadow: var(--shadow-raised);
   }
+
+  /* App frame: darkest surface, so the layout reads as a frame around the canvas. */
+  .fx-sidebar {
+    background-color: var(--color-chrome);
+    border-right: 1px solid var(--color-line-soft);
+    box-shadow:
+      inset -1px 0 0 0 rgb(255 255 255 / 0.025),
+      20px 0 48px -32px rgb(0 0 0 / 0.9);
+  }
+
+  .fx-header {
+    background-color: color-mix(in oklab, var(--color-chrome) 76%, transparent);
+    backdrop-filter: blur(14px) saturate(140%);
+    border-bottom: 1px solid var(--color-line-soft);
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.03),
+      0 12px 32px -28px rgb(0 0 0 / 0.9);
+  }
+
+  .fx-identity {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--color-line-soft);
+    border-radius: var(--radius-card);
+    background-color: color-mix(in oklab, var(--color-surface-1) 62%, transparent);
+  }
+
+  .fx-brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-image: linear-gradient(
+      140deg,
+      var(--color-accent-hover),
+      var(--color-accent) 52%,
+      #4a57dd
+    );
+    color: var(--color-accent-deep);
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.4),
+      0 6px 18px -8px color-mix(in oklab, var(--color-accent) 80%, transparent);
+  }
+
+  .fx-avatar {
+    display: flex;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background-image: linear-gradient(
+      140deg,
+      var(--color-accent-hover),
+      var(--color-accent)
+    );
+    color: var(--color-accent-deep);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.35);
+  }
+
+  /* ------------------------------------------------------------------- nav */
+
+  .fx-nav {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-radius: var(--radius-input);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: var(--color-ink-muted);
+    transition: background-color 140ms ease, color 140ms ease;
+  }
+
+  .fx-nav:hover {
+    background-color: var(--color-surface-1);
+    color: var(--color-ink);
+  }
+
+  /* Active is a tinted pill plus a rail, not a solid slab, so the accent stays a
+     highlight rather than a wall of colour. */
+  .fx-nav-active {
+    background-color: var(--color-accent-soft);
+    color: var(--color-accent-bright);
+    font-weight: 500;
+  }
+
+  .fx-nav-active::before {
+    content: "";
+    position: absolute;
+    left: -0.375rem;
+    top: 50%;
+    width: 2px;
+    height: 1.25rem;
+    transform: translateY(-50%);
+    border-radius: 9999px;
+    background-color: var(--color-accent);
+  }
+
+  .fx-nav-active:hover {
+    background-color: var(--color-accent-soft);
+    color: var(--color-accent-bright);
+  }
+
+  /* ------------------------------------------------------------------ type */
 
   .fx-label {
     display: block;
-    font-size: 0.75rem;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-    color: var(--color-ink-muted);
-    margin-bottom: 0.375rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-ink-faint);
+    margin-bottom: 0.4375rem;
   }
+
+  /* A <th> must remain a table cell; .fx-label's `display: block` would otherwise pull
+     it out of the row and break column alignment. */
+  th.fx-label {
+    display: table-cell;
+  }
+
+  .fx-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--color-ink-faint);
+  }
+
+  .fx-value {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  /* Dashed, recessed placeholder used wherever a panel has no content yet. */
+  .fx-empty {
+    display: block;
+    padding: 1.75rem 1rem;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--color-ink-muted);
+    border: 1px dashed var(--color-line);
+    border-radius: var(--radius-input);
+    background-color: color-mix(in oklab, var(--color-surface-1) 55%, transparent);
+  }
+
+  .fx-stat {
+    display: block;
+    padding: 1rem;
+    background-color: var(--color-surface-2);
+    background-image: linear-gradient(
+      to bottom,
+      rgb(255 255 255 / 0.04),
+      rgb(255 255 255 / 0) 55%
+    );
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-panel);
+    transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+  }
+
+  .fx-stat:hover {
+    border-color: color-mix(in oklab, var(--color-accent) 45%, transparent);
+    box-shadow: var(--shadow-raised);
+    transform: translateY(-1px);
+  }
+
+  /* Cards and stat tiles are focusable too (they are links and buttons). They set their
+     own box-shadow, so the shared focus halo is replaced by a brighter edge. */
+  .fx-card:focus-visible,
+  .fx-stat:focus-visible {
+    border-color: var(--color-accent);
+    outline-color: var(--color-accent-bright);
+  }
+
+  /* --------------------------------------------------------------- controls */
 
   .fx-input {
     width: 100%;
-    background-color: var(--color-surface-0);
-    border: 1px solid var(--color-line);
+    background-color: var(--color-surface-1);
+    border: 1px solid var(--color-line-strong);
     border-radius: var(--radius-input);
     padding: 0.5rem 0.75rem;
     font-size: 0.875rem;
     color: var(--color-ink);
-    transition: border-color 120ms ease, box-shadow 120ms ease;
+    box-shadow: inset 0 1px 2px rgb(2 5 12 / 0.45);
+    transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
   }
 
   .fx-input::placeholder {
@@ -101,13 +343,16 @@
   }
 
   .fx-input:hover:not(:disabled) {
-    border-color: var(--color-line-strong);
+    border-color: color-mix(in oklab, var(--color-accent) 40%, var(--color-line-strong));
   }
 
   .fx-input:focus {
     outline: none;
     border-color: var(--color-accent);
-    box-shadow: 0 0 0 3px var(--color-accent-ring);
+    background-color: var(--color-surface-2);
+    box-shadow:
+      inset 0 1px 2px rgb(2 5 12 / 0.35),
+      0 0 0 3px var(--color-accent-ring);
   }
 
   .fx-input:disabled {
@@ -118,12 +363,14 @@
   .fx-input-invalid,
   .fx-input-invalid:focus {
     border-color: var(--color-danger);
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-danger) 25%, transparent);
+    box-shadow:
+      inset 0 1px 2px rgb(2 5 12 / 0.35),
+      0 0 0 3px color-mix(in oklab, var(--color-danger) 32%, transparent);
   }
 
   .fx-select {
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%2394a3c4' stroke-width='1.5'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23adbad2' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.625rem center;
     background-size: 0.875rem;
@@ -140,7 +387,12 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+    transition:
+      background-color 140ms ease,
+      background-image 140ms ease,
+      border-color 140ms ease,
+      color 140ms ease,
+      transform 120ms ease;
   }
 
   .fx-btn:disabled {
@@ -148,26 +400,41 @@
     cursor: not-allowed;
   }
 
+  .fx-btn:not(:disabled):active {
+    transform: translateY(1px);
+  }
+
+  /* A bright accent fill with a deep label: the highest-contrast, highest-salience
+     element in the layout, and the only element that gets it. */
   .fx-btn-primary {
-    background-color: var(--color-accent);
-    border: 1px solid var(--color-accent);
-    color: white;
+    background-image: linear-gradient(
+      to bottom,
+      var(--color-accent-bright),
+      var(--color-accent)
+    );
+    border: 1px solid color-mix(in oklab, var(--color-accent-bright) 60%, transparent);
+    color: var(--color-accent-deep);
+    font-weight: 600;
   }
 
   .fx-btn-primary:hover:not(:disabled) {
-    background-color: var(--color-accent-hover);
-    border-color: var(--color-accent-hover);
+    background-image: linear-gradient(
+      to bottom,
+      var(--color-accent-hover),
+      var(--color-accent-bright)
+    );
+    border-color: color-mix(in oklab, var(--color-accent-hover) 80%, transparent);
   }
 
   .fx-btn-secondary {
-    background-color: transparent;
-    border: 1px solid var(--color-line-strong);
+    background-color: var(--color-surface-3);
+    border: 1px solid var(--color-hairline);
     color: var(--color-ink);
   }
 
   .fx-btn-secondary:hover:not(:disabled) {
-    background-color: var(--color-surface-2);
-    border-color: var(--color-accent);
+    background-color: var(--color-surface-4);
+    border-color: color-mix(in oklab, var(--color-accent) 50%, transparent);
   }
 
   .fx-btn-ghost {
@@ -177,66 +444,121 @@
   }
 
   .fx-btn-ghost:hover:not(:disabled) {
-    background-color: var(--color-surface-2);
+    background-color: var(--color-surface-1);
     color: var(--color-ink);
   }
 
   .fx-chip {
     display: inline-flex;
     align-items: center;
+    gap: 0.375rem;
     border-radius: 9999px;
-    border: 1px solid var(--color-line);
-    background-color: var(--color-surface-2);
-    padding: 0.25rem 0.625rem;
+    border: 1px solid var(--color-hairline);
+    background-color: var(--color-surface-3);
+    padding: 0.3125rem 0.6875rem;
     font-size: 0.75rem;
+    font-weight: 500;
     color: var(--color-ink-muted);
     white-space: nowrap;
     cursor: pointer;
-    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+    transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
   }
 
   .fx-chip:hover {
+    background-color: var(--color-surface-4);
     border-color: var(--color-line-strong);
     color: var(--color-ink);
   }
 
   .fx-chip-active {
-    background-color: var(--color-accent);
-    border-color: var(--color-accent);
-    color: white;
+    background-image: linear-gradient(
+      to bottom,
+      var(--color-accent-bright),
+      var(--color-accent)
+    );
+    border-color: color-mix(in oklab, var(--color-accent-bright) 60%, transparent);
+    color: var(--color-accent-deep);
+    font-weight: 600;
   }
 
   .fx-chip-active:hover {
-    color: white;
+    color: var(--color-accent-deep);
   }
 
+  /* ---------------------------------------------------------------- results */
+
+  /* Recessed into the card it sits in, with a secondary rail: the answer is a value,
+     not an action. */
   .fx-result {
-    background-color: var(--color-surface-0);
+    background-color: var(--color-surface-1);
     border: 1px solid var(--color-line);
-    border-left: 3px solid var(--color-accent);
+    border-left: 3px solid var(--color-secondary);
     border-radius: var(--radius-input);
     padding: 1rem;
+    box-shadow: inset 0 1px 3px rgb(2 5 12 / 0.4);
   }
 
   .fx-error {
-    background-color: color-mix(in oklab, var(--color-danger) 12%, transparent);
-    border: 1px solid color-mix(in oklab, var(--color-danger) 40%, transparent);
+    background-color: color-mix(in oklab, var(--color-danger) 10%, var(--color-surface-1));
+    border: 1px solid color-mix(in oklab, var(--color-danger) 34%, transparent);
     border-radius: var(--radius-input);
     padding: 0.75rem 1rem;
     font-size: 0.875rem;
-    color: color-mix(in oklab, var(--color-danger) 75%, white);
+    color: var(--color-danger-bright);
   }
 
-  /* KaTeX sits inside a dark card and must not inherit the light-mode default. */
+  /* KaTeX sits inside a dark card and must not inherit the light-mode default. The
+     wrapper is its own recessed well so an equation always has a defined surface, at
+     every breakpoint, wherever it is dropped. */
   .fx-math {
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 0.25rem 0;
+    padding: 0.875rem 1rem;
+    background-color: var(--color-surface-1);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-input);
+    box-shadow: inset 0 1px 3px rgb(2 5 12 / 0.4);
+    color: var(--color-ink);
   }
 
   .fx-math .katex {
     color: var(--color-ink);
-    font-size: 1.1em;
+    font-size: 1.12em;
+  }
+
+  .fx-math .katex-display {
+    margin: 0;
+  }
+
+  /* ------------------------------------------------------------------ plots */
+
+  .fx-plot {
+    overflow: hidden;
+    background-color: var(--color-plot);
+    color: var(--color-plot-ink);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-input);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.6);
+  }
+
+  /* Auth pages: one soft accent bloom behind the card so the darkest screen in the app
+     is not a flat void. Purely decorative, pointer-events are disabled in the rule. */
+  .fx-auth {
+    position: relative;
+  }
+
+  .fx-auth::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: -14rem -12rem auto;
+    height: 30rem;
+    background: radial-gradient(
+      55% 55% at 50% 50%,
+      color-mix(in oklab, var(--color-accent) 20%, transparent),
+      transparent 70%
+    );
+    pointer-events: none;
   }
 }
 

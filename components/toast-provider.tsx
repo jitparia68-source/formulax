@@ -27,9 +27,9 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 const DISMISS_AFTER_MS = 3200;
 
 const TONE_CLASS: Record<ToastTone, string> = {
-  success: "border-success/50 bg-success/15 text-success",
-  error: "border-danger/50 bg-danger/15 text-danger",
-  info: "border-accent/50 bg-accent/15 text-ink",
+  success: "border-success/45 bg-success/12 text-success",
+  error: "border-danger/45 bg-danger/12 text-danger-bright",
+  info: "border-accent/45 bg-accent/12 text-ink",
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -62,7 +62,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex items-start gap-3 rounded-card border px-4 py-3 text-sm shadow-lg backdrop-blur ${TONE_CLASS[toast.tone]}`}
+            className={`pointer-events-auto flex items-start gap-3 rounded-card border px-4 py-3 text-sm leading-relaxed shadow-float backdrop-blur ${TONE_CLASS[toast.tone]}`}
           >
             <p className="flex-1">{toast.message}</p>
             <button

@@ -2,14 +2,13 @@ import type { Metadata } from "next";
 
 import { AuthShell } from "@/components/form-controls";
 import { RegisterForm } from "@/components/register-form";
-import { registerAction } from "@/lib/auth-actions";
 
 export const metadata: Metadata = { title: "Create account" };
 
 export default async function RegisterPage(props: PageProps<"/register">) {
   const params = await props.searchParams;
-  const callbackUrl =
-    typeof params.callbackUrl === "string" ? params.callbackUrl : "/dashboard";
+  const raw = typeof params.redirectUrl === "string" ? params.redirectUrl : "";
+  const callbackUrl = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/dashboard";
 
   return (
     <AuthShell
@@ -18,13 +17,13 @@ export default async function RegisterPage(props: PageProps<"/register">) {
       footer={
         <>
           Already registered?{" "}
-          <a href="/login" className="text-accent hover:text-accent-hover">
+          <a href="/login" className="font-medium text-accent-bright underline decoration-accent/40 underline-offset-4 transition hover:decoration-accent">
             Sign in
           </a>
         </>
       }
     >
-      <RegisterForm action={registerAction} callbackUrl={callbackUrl} />
+      <RegisterForm callbackUrl={callbackUrl} />
     </AuthShell>
   );
 }

@@ -157,7 +157,7 @@ export function LabCoach({ initialRuns }: { initialRuns: LabRunRow[] }) {
     const toY = (value: number) =>
       height - pad - ((value - yLow) / (yHigh - yLow || 1)) * (height - pad * 2);
 
-    context.strokeStyle = "#24334f";
+    context.strokeStyle = "#7c88a3";
     context.lineWidth = 1;
     context.beginPath();
     context.moveTo(pad, pad);
@@ -165,21 +165,21 @@ export function LabCoach({ initialRuns }: { initialRuns: LabRunRow[] }) {
     context.lineTo(width - pad, height - pad);
     context.stroke();
 
-    context.strokeStyle = "#6c5ce7";
+    context.strokeStyle = "#4f5ce0";
     context.lineWidth = 2;
     context.beginPath();
     context.moveTo(toX(minX), toY(predict(analysis, minX)));
     context.lineTo(toX(maxX), toY(predict(analysis, maxX)));
     context.stroke();
 
-    context.fillStyle = "#34d399";
+    context.fillStyle = "#0d8f6f";
     for (const [x, y] of analysis.points) {
       context.beginPath();
       context.arc(toX(x), toY(y), 4, 0, Math.PI * 2);
       context.fill();
     }
 
-    context.fillStyle = "#64748f";
+    context.fillStyle = "#5a6479";
     context.font = "11px system-ui, sans-serif";
     context.fillText(experiment.xLabel, width - pad - context.measureText(experiment.xLabel).width, height - 8);
   }, [analysis, experiment]);
@@ -389,7 +389,7 @@ export function LabCoach({ initialRuns }: { initialRuns: LabRunRow[] }) {
                       onClick={() => setRows(rows.filter((_, i) => i !== index))}
                       disabled={rows.length <= 2}
                       aria-label={`Remove row ${index + 1}`}
-                      className="fx-btn fx-btn-ghost px-2 text-danger disabled:opacity-40"
+                      className="fx-btn fx-btn-ghost px-2 text-danger-bright disabled:opacity-40"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -437,10 +437,8 @@ export function LabCoach({ initialRuns }: { initialRuns: LabRunRow[] }) {
                     { label: "Points", value: String(analysis.points.length) },
                   ].map((item) => (
                     <div key={item.label}>
-                      <dt className="text-xs tracking-wide text-ink-muted uppercase">
-                        {item.label}
-                      </dt>
-                      <dd className="mt-1 font-mono text-lg font-semibold text-accent">
+                      <dt className="fx-eyebrow">{item.label}</dt>
+                      <dd className="fx-value mt-1 text-lg text-secondary">
                         {item.value}
                       </dd>
                     </div>
@@ -459,7 +457,7 @@ export function LabCoach({ initialRuns }: { initialRuns: LabRunRow[] }) {
                 ref={canvasRef}
                 role="img"
                 aria-label={`Scatter plot with best-fit line, gradient ${analysis.slope.toFixed(3)}`}
-                className="mt-4 h-80 w-full rounded-input border border-line bg-surface-0"
+                className="fx-plot mt-4 h-80 w-full"
               />
 
               <div className="mt-4 flex flex-col gap-3">
@@ -524,7 +522,7 @@ export function LabCoach({ initialRuns }: { initialRuns: LabRunRow[] }) {
                   onClick={() => onDelete(run)}
                   disabled={isPending}
                   aria-label={`Delete run ${run.title}`}
-                  className="fx-btn fx-btn-ghost px-2 text-danger disabled:opacity-50"
+                  className="fx-btn fx-btn-ghost px-2 text-danger-bright disabled:opacity-50"
                 >
                   <svg
                     viewBox="0 0 24 24"

@@ -100,7 +100,7 @@ export function FormulaScanner() {
             type="file"
             accept="image/*"
             onChange={onFileChange}
-            className="fx-input file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-surface-3 file:px-3 file:py-1.5 file:text-xs file:text-ink"
+            className="fx-input file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-surface-3 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ink"
           />
         </div>
 
@@ -109,7 +109,7 @@ export function FormulaScanner() {
           <img
             src={previewUrl}
             alt="Selected formula preview"
-            className="max-h-48 w-fit rounded-input border border-line bg-white/5 p-1"
+            className="max-h-48 w-fit rounded-input border border-line bg-surface-1 p-1"
           />
         ) : null}
 

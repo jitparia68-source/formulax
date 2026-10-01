@@ -221,7 +221,7 @@ export function PracticeQuiz({ formulas }: Props) {
 
   if (pool.length < 4) {
     return (
-      <p className="fx-card px-6 py-10 text-center text-sm text-ink-muted">
+      <p className="fx-empty">
         At least four formulas are needed to build a quiz. Add more to your vault first.
       </p>
     );
@@ -248,12 +248,8 @@ export function PracticeQuiz({ formulas }: Props) {
                 { label: "Best streak", value: progress.bestStreak },
               ].map((stat) => (
                 <div key={stat.label}>
-                  <dt className="text-[0.6875rem] tracking-wide text-ink-muted uppercase">
-                    {stat.label}
-                  </dt>
-                  <dd className="font-mono text-lg font-semibold text-accent">
-                    {stat.value}
-                  </dd>
+                  <dt className="fx-eyebrow">{stat.label}</dt>
+                  <dd className="fx-value text-lg text-secondary">{stat.value}</dd>
                 </div>
               ))}
             </dl>
@@ -294,12 +290,12 @@ export function PracticeQuiz({ formulas }: Props) {
 
         <div aria-live="polite" className="mt-5">
           {!question ? (
-            <p className="fx-card px-4 py-8 text-center text-sm text-ink-muted">
+            <p className="fx-empty">
               Start a round to be shown a description and four candidate equations.
             </p>
           ) : (
             <div className="flex flex-col gap-4">
-              <p className="text-xs tracking-wide text-ink-faint uppercase">
+              <p className="fx-eyebrow">
                 Question {round}
                 {progress.streak > 0 ? ` - ${progress.streak} in a row` : ""}
               </p>
@@ -311,7 +307,7 @@ export function PracticeQuiz({ formulas }: Props) {
                   &ldquo;{question.formula.description}&rdquo;?
                 </p>
                 {showHint ? (
-                  <p className="mt-2 text-sm text-accent">
+                  <p className="mt-2 text-sm font-medium text-accent-bright">
                     Hint: it is titled &ldquo;{question.formula.title}&rdquo;.
                   </p>
                 ) : null}
@@ -335,7 +331,7 @@ export function PracticeQuiz({ formulas }: Props) {
                         type="button"
                         onClick={() => submit(index)}
                         disabled={answerIndex !== null}
-                        className={`fx-card w-full px-4 py-3 text-left transition ${stateClass}`}
+                        className={`fx-card w-full px-4 py-3 text-left transition hover:border-line-strong ${stateClass}`}
                       >
                         <MathFormula latex={option.latex} display={false} />
                         <span className="mt-1 block text-xs text-ink-faint">
@@ -387,7 +383,7 @@ export function PracticeQuiz({ formulas }: Props) {
                 >
                   <a
                     href={`/formulas?category=${encodeURIComponent(topic.category)}`}
-                    className="text-sm text-accent hover:text-accent-hover"
+                    className="text-sm font-medium text-accent-bright hover:text-accent-hover"
                   >
                     {topic.category} &rarr;
                   </a>

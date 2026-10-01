@@ -56,7 +56,7 @@ export function Spinner({ className = "size-4" }: { className?: string }) {
 
 export function FieldError({ children }: { children: React.ReactNode }) {
   return (
-    <p role="alert" className="mt-1.5 text-xs text-danger">
+    <p role="alert" className="mt-1.5 text-xs font-medium text-danger-bright">
       {children}
     </p>
   );
@@ -74,12 +74,12 @@ export function AuthShell({
   footer: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-10">
+    <div className="fx-auth flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <Link href="/" className="mb-8 flex items-center justify-center gap-2.5">
           <span
             aria-hidden="true"
-            className="flex size-9 items-center justify-center rounded-input bg-accent font-mono font-bold text-white"
+            className="fx-brand-mark size-9 rounded-input font-mono font-bold"
           >
             &int;
           </span>

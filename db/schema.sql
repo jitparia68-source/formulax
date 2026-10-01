@@ -1,6 +1,27 @@
 -- FormulaX - Supabase Postgres schema (Postgres 17).
 -- Idempotent: safe to run repeatedly. Apply with psql as the `postgres` role.
 --
+-- IDENTITY - Clerk owns it
+-- Auth.js was removed; Clerk is now the sole identity provider. That has two
+-- consequences for this file:
+--   1. There is no `users` table. Clerk owns the user record, so a local mirror
+--      would be a second source of truth that can drift. Worse, the old table held
+--      `password_hash` (bcrypt). Supabase exposes PostgREST over the same database,
+--      so any table reachable by the `anon` key is a credential-disclosure surface
+--      for every other user on the project. The table is dropped, not renamed.
+--   2. `user_id` is `TEXT`, not `UUID`. Clerk user ids are opaque strings such as
+--      `user_2abcDEF`, so a UUID column cannot store them. The id is stored verbatim
+--      and is never parsed, cast or ordered on a meaning - it is only ever an equality
+--      key, which is exactly what `TEXT` gives us without a lossy conversion layer.
+--
+-- MIGRATION ORDER (this is load-bearing, do not reorder)
+-- Postgres cannot retype a column while a foreign key depends on it, so the legacy
+-- FKs to `public.users(id)` must be dropped BEFORE the uuid -> text change. The three
+-- DO blocks below do that in order: (1) drop the FKs, (2) retype the columns,
+-- (3) drop the table. Each block is written to be a no-op when the object it targets
+-- is already gone, so this block is safe on a fresh database and safe on one that
+-- still carries the old Auth.js schema.
+--
 -- DESIGN NOTE - formula_id vs slug
 -- The PRD pairs `formulas.id UUID` with `saved_bookmarks.formula_id TEXT`, which cannot
 -- form a foreign key and leaves bookmarks dangling when a formula is deleted.
@@ -21,29 +42,68 @@
 -- SECURITY - Row Level Security is enabled on every table with no policies, i.e. deny-all
 -- for `anon` / `authenticated`. Grants are revoked from those roles as well. The app only
 -- ever reaches the database through the service-role client in `lib/supabase.ts`, which
--- bypasses RLS. Without this, PostgREST would expose `users.password_hash` to the anon key.
+-- bypasses RLS. This is what keeps the Clerk user id in `formulas.user_id` unreadable
+-- from a browser: the anon key is not an authentication mechanism here.
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ---------------------------------------------------------------------------
--- users
+-- Legacy migration: Auth.js `users` table -> Clerk text ids. Idempotent.
 -- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.users (
-  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name          TEXT NOT NULL CHECK (length(btrim(name)) BETWEEN 1 AND 120),
-  email         TEXT NOT NULL CHECK (email = lower(btrim(email)) AND position('@' IN email) > 1),
-  password_hash TEXT NOT NULL,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CONSTRAINT users_email_key UNIQUE (email)
-);
+
+-- (1) Drop every foreign key that points at public.users. Must precede step (2).
+DO $$
+DECLARE
+  fk RECORD;
+BEGIN
+  IF to_regclass('public.users') IS NOT NULL THEN
+    FOR fk IN
+      SELECT conrelid::regclass AS table_ref, conname
+      FROM pg_constraint
+      WHERE contype = 'f'
+        AND confrelid = 'public.users'::regclass
+    LOOP
+      EXECUTE format('ALTER TABLE %s DROP CONSTRAINT %I', fk.table_ref, fk.conname);
+    END LOOP;
+  END IF;
+END;
+$$;
+
+-- (2) Retype user_id to TEXT, skipping columns that are already text.
+DO $$
+DECLARE
+  col RECORD;
+BEGIN
+  FOR col IN
+    SELECT table_name, column_name
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name IN ('formulas', 'saved_bookmarks', 'lab_runs')
+      AND column_name = 'user_id'
+      AND data_type <> 'text'
+  LOOP
+    EXECUTE format(
+      'ALTER TABLE public.%I ALTER COLUMN %I TYPE TEXT USING %I::text',
+      col.table_name,
+      col.column_name,
+      col.column_name
+    );
+  END LOOP;
+END;
+$$;
+
+-- (3) Drop the Auth.js identity table. CASCADE only matters for a partially
+-- migrated database; the FKs are already gone by this point.
+DROP TABLE IF EXISTS public.users CASCADE;
 
 -- ---------------------------------------------------------------------------
 -- formulas
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.formulas (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id       UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  -- Clerk user id, e.g. `user_2abcDEF`. Null only for seeded baseline content.
+  user_id       TEXT,
   slug          TEXT UNIQUE,
   title         TEXT NOT NULL CHECK (length(btrim(title)) BETWEEN 1 AND 160),
   category      TEXT NOT NULL CHECK (length(btrim(category)) BETWEEN 1 AND 60),
@@ -95,7 +155,7 @@ CREATE TRIGGER formulas_set_slug_trg
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.saved_bookmarks (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id    UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  user_id    TEXT NOT NULL,
   formula_id TEXT NOT NULL REFERENCES public.formulas(slug) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT saved_bookmarks_user_formula_key UNIQUE (user_id, formula_id)
@@ -108,7 +168,7 @@ CREATE INDEX IF NOT EXISTS saved_bookmarks_user_id_idx ON public.saved_bookmarks
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.lab_runs (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id        UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  user_id        TEXT NOT NULL,
   experiment_key TEXT NOT NULL CHECK (length(btrim(experiment_key)) BETWEEN 1 AND 80),
   title          TEXT NOT NULL CHECK (length(btrim(title)) BETWEEN 1 AND 160),
   readings       JSONB NOT NULL,
@@ -186,12 +246,10 @@ ON CONFLICT (slug) DO UPDATE SET
 -- ---------------------------------------------------------------------------
 -- Row Level Security: deny-all for anon/authenticated, service role bypasses.
 -- ---------------------------------------------------------------------------
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.formulas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.saved_bookmarks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lab_runs ENABLE ROW LEVEL SECURITY;
 
-REVOKE ALL ON public.users FROM anon, authenticated;
 REVOKE ALL ON public.formulas FROM anon, authenticated;
 REVOKE ALL ON public.saved_bookmarks FROM anon, authenticated;
 REVOKE ALL ON public.lab_runs FROM anon, authenticated;

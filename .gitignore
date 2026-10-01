@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# The template is committed on purpose: it documents which variables the app needs
+# without containing any values. A later pattern would not override the .env* above.
+!.env.example
 
 # vercel
 .vercel

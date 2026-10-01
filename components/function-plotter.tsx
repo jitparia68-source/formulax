@@ -69,7 +69,7 @@ export function FunctionPlotter({
             {
               fn: (scope: { x?: number }) =>
                 typeof scope.x === "number" ? compiled.fn(scope.x) : Number.NaN,
-              color: "#6c5ce7",
+              color: "#4f5ce0",
               graphType: "polyline",
             },
           ],
@@ -137,7 +137,7 @@ export function FunctionPlotter({
         </p>
       ) : null}
 
-      <div className="mt-4 overflow-hidden rounded-input border border-line bg-white">
+      <div className="fx-plot mt-4">
         <div
           ref={containerRef}
           style={{ minHeight: PLOT_HEIGHT }}
@@ -145,7 +145,7 @@ export function FunctionPlotter({
           role="img"
         />
         {!ready && state.status !== "error" ? (
-          <p className="flex items-center justify-center py-24 text-sm text-ink-faint">
+          <p className="flex items-center justify-center py-24 text-sm">
             Loading plotter&hellip;
           </p>
         ) : null}

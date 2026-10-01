@@ -136,7 +136,7 @@ export function CheatSheet({ formulas, initialBookmarks }: Props) {
             <li key={formula.slug} className="fx-card-raised flex flex-col p-5">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <span className="fx-chip pointer-events-none">
+                  <span className="fx-chip pointer-events-none cursor-default">
                     {formula.category}
                   </span>
                   <h2 className="mt-2 font-medium">{formula.title}</h2>
@@ -161,7 +161,7 @@ export function CheatSheet({ formulas, initialBookmarks }: Props) {
                   </svg>
                 </button>
               </div>
-              <div className="fx-card my-3 px-3 py-4">
+              <div className="my-3">
                 <MathFormula latex={formula.latex} />
               </div>
               <p className="text-sm text-ink-muted">{formula.description}</p>

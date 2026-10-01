@@ -4,8 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { useClerk } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+
 import { NAV_SECTIONS } from "@/lib/nav-sections";
-import { logoutAction } from "@/lib/auth-actions";
 
 const ICON_PATHS: Record<string, string> = {
   grid: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z",
@@ -47,8 +49,19 @@ type Props = {
 
 export function AppShell({ user, title, subtitle, actions, children }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { signOut } = useClerk();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
+
+  // Uses the headless Clerk hook rather than <UserButton/>, which would render Clerk's
+  // prebuilt UI and watermark.
+  async function onSignOut() {
+    setSigningOut(true);
+    await signOut({ redirectUrl: "/login" });
+    router.refresh();
+  }
 
   // Route changes are client-side, so the browser does not reset focus. Moving it to the
   // main landmark keeps keyboard and screen-reader users oriented. The drawer is closed
@@ -83,11 +96,7 @@ export function AppShell({ user, title, subtitle, actions, children }: Props) {
             key={section.href}
             href={section.href}
             aria-current={isActive ? "page" : undefined}
-            className={`flex items-center gap-3 rounded-input px-3 py-2 text-sm transition ${
-              isActive
-                ? "bg-accent text-white"
-                : "text-ink-muted hover:bg-surface-2 hover:text-ink"
-            }`}
+            className={`fx-nav ${isActive ? "fx-nav-active" : ""}`}
           >
             <NavIcon name={section.icon} filled={isActive} />
             <span className="truncate">{section.label}</span>
@@ -98,11 +107,8 @@ export function AppShell({ user, title, subtitle, actions, children }: Props) {
   );
 
   const identity = (
-    <div className="flex items-center gap-3 rounded-card border border-line bg-surface-2 p-3">
-      <div
-        aria-hidden="true"
-        className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-white"
-      >
+    <div className="fx-identity">
+      <div aria-hidden="true" className="fx-avatar text-sm">
         {initial}
       </div>
       <div className="min-w-0 flex-1">
@@ -116,30 +122,32 @@ export function AppShell({ user, title, subtitle, actions, children }: Props) {
     <div className="flex min-h-screen w-full">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-100 focus:rounded-input focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:text-white"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-100 focus:rounded-input focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-accent-deep"
       >
         Skip to content
       </a>
 
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-5 border-r border-line bg-surface-1 p-4 lg:flex">
+      <aside className="fx-sidebar sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-5 p-4 lg:flex">
         <Link href="/dashboard" className="flex items-center gap-2.5 px-1">
-          <span
-            aria-hidden="true"
-            className="flex size-8 items-center justify-center rounded-input bg-accent font-mono text-sm font-bold text-white"
-          >
+          <span aria-hidden="true" className="fx-brand-mark size-8 rounded-input font-mono text-sm font-bold">
             &int;
           </span>
           <span className="text-base font-semibold tracking-tight">FormulaX</span>
         </Link>
         {identity}
         {nav}
-        <form action={logoutAction} className="mt-auto">
-          <button type="submit" className="fx-btn fx-btn-ghost w-full justify-start">
+        <div className="mt-auto">
+          <button
+            type="button"
+            onClick={() => void onSignOut()}
+            disabled={signingOut}
+            className="fx-btn fx-btn-ghost w-full justify-start"
+          >
             <NavIcon name="logout" filled={false} />
-            Sign out
+            {signingOut ? "Signing out..." : "Sign out"}
           </button>
-        </form>
+        </div>
       </aside>
 
       {/* Mobile drawer */}
@@ -149,18 +157,15 @@ export function AppShell({ user, title, subtitle, actions, children }: Props) {
             type="button"
             aria-label="Close navigation"
             onClick={() => setDrawerOpen(false)}
-            className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 cursor-default bg-black/70 backdrop-blur-sm"
           />
           <aside
             aria-label="Navigation"
-            className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col gap-5 border-r border-line bg-surface-1 p-4"
+            className="fx-sidebar absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col gap-5 p-4 shadow-float"
           >
             <div className="flex items-center justify-between">
               <Link href="/dashboard" className="flex items-center gap-2.5">
-                <span
-                  aria-hidden="true"
-                  className="flex size-8 items-center justify-center rounded-input bg-accent font-mono text-sm font-bold text-white"
-                >
+                <span aria-hidden="true" className="fx-brand-mark size-8 rounded-input font-mono text-sm font-bold">
                   &int;
                 </span>
                 <span className="text-base font-semibold tracking-tight">FormulaX</span>
@@ -183,21 +188,23 @@ export function AppShell({ user, title, subtitle, actions, children }: Props) {
             </div>
             {identity}
             {nav}
-            <form action={logoutAction} className="mt-auto">
+            <div className="mt-auto">
               <button
-                type="submit"
+                type="button"
+                onClick={() => void onSignOut()}
+                disabled={signingOut}
                 className="fx-btn fx-btn-ghost w-full justify-start"
               >
                 <NavIcon name="logout" filled={false} />
-                Sign out
+                {signingOut ? "Signing out..." : "Sign out"}
               </button>
-            </form>
+            </div>
           </aside>
         </div>
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 border-b border-line bg-surface-0/85 backdrop-blur">
+        <header className="fx-header sticky top-0 z-30">
           <div className="flex items-center gap-3 px-4 py-4 sm:px-6">
             <button
               type="button"
