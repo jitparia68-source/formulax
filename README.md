@@ -47,11 +47,16 @@ policies (deny-all for `anon` and `authenticated`, with their grants revoked), a
 ## Scripts
 
 ```bash
-pnpm dev     # development server
-pnpm build   # production build
-pnpm start   # serve the production build
-pnpm lint    # eslint
+pnpm dev        # development server
+pnpm build      # production build
+pnpm start      # serve the production build
+pnpm lint       # eslint
+pnpm typecheck  # generate route types, then tsc --noEmit
 ```
+
+`pnpm typecheck` runs `next typegen` first because the `PageProps` and `LayoutProps`
+globals are generated from the route table into `.next/types`, which does not exist in a
+fresh clone.
 
 ## Layout
 
