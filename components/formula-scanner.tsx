@@ -100,7 +100,7 @@ export function FormulaScanner() {
             type="file"
             accept="image/*"
             onChange={onFileChange}
-            className="fx-input file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-surface-3 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ink"
+            className="fx-input file:mr-3 file:cursor-pointer file:rounded file:border file:border-line-strong file:bg-surface-3 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ink"
           />
         </div>
 

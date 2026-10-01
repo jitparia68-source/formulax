@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { PlotExportButton } from "@/components/plot-export-button";
 import { PLOT_PRESETS, compileFunction } from "@/lib/evaluate";
 
 const EXPRESSION_HINT =
@@ -25,6 +26,7 @@ export function FunctionPlotter({
   );
   const [state, setState] = useState<PlotState>({ status: "idle" });
   const [ready, setReady] = useState(false);
+  const [svgNode, setSvgNode] = useState<SVGSVGElement | null>(null);
 
   useEffect(() => {
     let disposed = false;
@@ -77,6 +79,7 @@ export function FunctionPlotter({
       };
 
       draw();
+      setSvgNode(containerRef.current?.querySelector("svg") ?? null);
       setReady(true);
 
       // function-plot exposes no `resize()`, so a ResizeObserver re-draws instead.
@@ -97,10 +100,20 @@ export function FunctionPlotter({
 
   return (
     <section className="fx-card p-5" aria-labelledby="plotter-heading">
-      <h2 id="plotter-heading" className="text-sm font-semibold">
-        2D Cartesian plotter
-      </h2>
-      <p className="mt-1 text-sm text-ink-muted">{EXPRESSION_HINT}</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 id="plotter-heading" className="text-sm font-semibold">
+            2D Cartesian plotter
+          </h2>
+          <p className="mt-1 text-sm text-ink-muted">{EXPRESSION_HINT}</p>
+        </div>
+        <PlotExportButton
+          svg={svgNode}
+          expression={expression}
+          background="var(--color-plot)"
+          ink="var(--color-plot-ink)"
+        />
+      </div>
 
       <div className="mt-4">
         <label htmlFor="plot-expression" className="fx-label">

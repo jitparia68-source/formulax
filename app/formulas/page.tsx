@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { getUserData } from "@/app/actions";
+import { getFormulaNotesAction, getUserData } from "@/app/actions";
 import { AppShell } from "@/components/app-shell";
 import { AddFormulaForm, DeleteFormulaButton } from "@/components/add-formula-form";
 import { FormulaVault } from "@/components/formula-vault";
@@ -21,7 +21,7 @@ export default async function FormulasPage(props: PageProps<"/formulas">) {
     typeof params.category === "string" ? params.category : null;
   const queryParam = typeof params.query === "string" ? params.query : null;
 
-  const data = await getUserData();
+  const [data, notes] = await Promise.all([getUserData(), getFormulaNotesAction()]);
   const formulas = data?.allFormulas ?? [];
   const customSlugs = new Set((data?.customFormulas ?? []).map((f) => f.slug));
 
@@ -38,6 +38,7 @@ export default async function FormulasPage(props: PageProps<"/formulas">) {
           initialBookmarks={data?.bookmarks ?? []}
           initialCategory={categoryParam}
           initialQuery={queryParam}
+          initialNotes={notes}
         />
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">

@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 
+import { Scratchpad } from "@/components/scratchpad";
 import { NAV_SECTIONS } from "@/lib/nav-sections";
 
 const ICON_PATHS: Record<string, string> = {
@@ -112,8 +113,8 @@ export function AppShell({ user, title, subtitle, actions, children }: Props) {
         {initial}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-ink">{user.name}</p>
-        <p className="truncate text-xs text-ink-faint">{user.email}</p>
+        <p className="truncate text-sm font-medium text-rail-ink">{user.name}</p>
+        <p className="truncate text-xs text-rail-faint">{user.email}</p>
       </div>
     </div>
   );
@@ -122,7 +123,7 @@ export function AppShell({ user, title, subtitle, actions, children }: Props) {
     <div className="flex min-h-screen w-full">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-100 focus:rounded-input focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-accent-deep"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-100 focus:rounded-input focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-accent-ink"
       >
         Skip to content
       </a>
@@ -133,7 +134,7 @@ export function AppShell({ user, title, subtitle, actions, children }: Props) {
           <span aria-hidden="true" className="fx-brand-mark size-8 rounded-input font-mono text-sm font-bold">
             &int;
           </span>
-          <span className="text-base font-semibold tracking-tight">FormulaX</span>
+          <span className="text-base font-semibold tracking-tight text-rail-ink">FormulaX</span>
         </Link>
         {identity}
         {nav}
@@ -142,7 +143,7 @@ export function AppShell({ user, title, subtitle, actions, children }: Props) {
             type="button"
             onClick={() => void onSignOut()}
             disabled={signingOut}
-            className="fx-btn fx-btn-ghost w-full justify-start"
+            className="fx-btn fx-btn-rail w-full justify-start"
           >
             <NavIcon name="logout" filled={false} />
             {signingOut ? "Signing out..." : "Sign out"}
@@ -168,13 +169,13 @@ export function AppShell({ user, title, subtitle, actions, children }: Props) {
                 <span aria-hidden="true" className="fx-brand-mark size-8 rounded-input font-mono text-sm font-bold">
                   &int;
                 </span>
-                <span className="text-base font-semibold tracking-tight">FormulaX</span>
+                <span className="text-base font-semibold tracking-tight text-rail-ink">FormulaX</span>
               </Link>
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}
                 aria-label="Close navigation"
-                className="fx-btn fx-btn-ghost px-2"
+                className="fx-btn fx-btn-rail px-2"
               >
                 <svg viewBox="0 0 24 24" className="size-5" aria-hidden="true">
                   <path
@@ -193,7 +194,7 @@ export function AppShell({ user, title, subtitle, actions, children }: Props) {
                 type="button"
                 onClick={() => void onSignOut()}
                 disabled={signingOut}
-                className="fx-btn fx-btn-ghost w-full justify-start"
+                className="fx-btn fx-btn-rail w-full justify-start"
               >
                 <NavIcon name="logout" filled={false} />
                 {signingOut ? "Signing out..." : "Sign out"}
@@ -236,10 +237,14 @@ export function AppShell({ user, title, subtitle, actions, children }: Props) {
           id="main-content"
           ref={mainRef}
           tabIndex={-1}
-          className="flex-1 px-4 py-6 outline-none sm:px-6"
+          className="fx-section flex-1 px-4 py-6 pb-24 outline-none sm:px-6"
         >
           {children}
         </main>
+
+        {/* Available on every tool, because the numbers you are juggling mid-calculation
+            are rarely the ones the tool on screen is asking for. */}
+        <Scratchpad />
       </div>
     </div>
   );

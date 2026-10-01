@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 
+import { CopyFormulaButtons } from "@/components/copy-formula";
+import { FormulaNote } from "@/components/formula-note";
 import { MathFormula } from "@/components/math-formula";
 import { useToast } from "@/components/toast-provider";
 import { toggleBookmarkAction } from "@/app/actions";
@@ -12,6 +14,8 @@ type Props = {
   initialBookmarks: string[];
   initialCategory: string | null;
   initialQuery?: string | null;
+  /** Study notes keyed by formula slug, read once so the vault makes a single query. */
+  initialNotes?: Record<string, string>;
 };
 
 const ALL = "All";
@@ -34,6 +38,7 @@ export function FormulaVault({
   initialBookmarks,
   initialCategory,
   initialQuery = null,
+  initialNotes = {},
 }: Props) {
   const { notify } = useToast();
   const [query, setQuery] = useState(initialQuery ?? "");
@@ -180,6 +185,20 @@ export function FormulaVault({
                 <p className="flex-1 text-sm text-ink-muted">
                   {formula.description}
                 </p>
+
+                <div className="mt-3">
+                  <CopyFormulaButtons
+                    latex={formula.latex}
+                    title={formula.title}
+                    compact
+                  />
+                </div>
+
+                <FormulaNote
+                  slug={formula.slug}
+                  title={formula.title}
+                  initialContent={initialNotes[formula.slug] ?? ""}
+                />
 
                 {formula.reference_url ? (
                   <a

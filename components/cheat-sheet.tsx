@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 
 import { toggleBookmarkAction } from "@/app/actions";
+import { CopyFormulaButtons } from "@/components/copy-formula";
 import { MathFormula } from "@/components/math-formula";
 import { useToast } from "@/components/toast-provider";
 import type { FormulaRow } from "@/types/database";
@@ -165,6 +166,13 @@ export function CheatSheet({ formulas, initialBookmarks }: Props) {
                 <MathFormula latex={formula.latex} />
               </div>
               <p className="text-sm text-ink-muted">{formula.description}</p>
+              <div className="mt-3">
+                <CopyFormulaButtons
+                  latex={formula.latex}
+                  title={formula.title}
+                  compact
+                />
+              </div>
             </li>
           ))}
         </ul>

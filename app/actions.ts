@@ -388,3 +388,128 @@ export async function getUserData(): Promise<UserData | null> {
     totalFormulas: baselineFormulas.length + customFormulas.length,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Study notes
+// ---------------------------------------------------------------------------
+
+const MAX_NOTE_LENGTH = 4000;
+
+/** The delete action takes FormData; build one rather than widening its signature. */
+function formDataFor(slug: string): FormData {
+  const formData = new FormData();
+  formData.set("slug", slug);
+  return formData;
+}
+
+/**
+ * Upsert rather than insert-then-update: the client autosaves on a debounce, so a
+ * duplicate save is a normal event rather than an error. `ON CONFLICT` also makes the
+ * write idempotent, which matters because two tabs can autosave the same note.
+ */
+export async function saveFormulaNoteAction(
+  formulaSlug: string,
+  content: string,
+): Promise<ActionResult<{ savedAt: string }>> {
+  const userId = await requireUserId();
+  if (!userId) {
+    return { success: false, error: "You must be signed in." };
+  }
+
+  const slug = formulaSlug?.trim() ?? "";
+  if (!slug) {
+    return { success: false, error: "Missing formula reference." };
+  }
+
+  // An emptied note is a deletion. Doing it here rather than in the client keeps a single
+  // code path for "the note for this formula should be this text", empty included.
+  const trimmed = content.trim();
+  if (trimmed.length === 0) {
+    const deleted = await deleteFormulaNoteAction(formDataFor(slug));
+    return deleted.success
+      ? { success: true, data: { savedAt: new Date().toISOString() } }
+      : deleted;
+  }
+  if (trimmed.length > MAX_NOTE_LENGTH) {
+    return {
+      success: false,
+      error: `Keep notes under ${MAX_NOTE_LENGTH} characters.`,
+    };
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("formula_notes")
+    .upsert(
+      { user_id: userId, formula_id: slug, content: trimmed, updated_at: new Date().toISOString() },
+      { onConflict: "user_id,formula_id" },
+    )
+    .select("updated_at")
+    .single<{ updated_at: string }>();
+
+  if (error || !data) {
+    // A missing slug is a 23503 foreign-key violation, which is a real user-facing
+    // condition rather than an internal fault.
+    if (error?.code === "23503") {
+      return { success: false, error: "That formula no longer exists." };
+    }
+    return { success: false, error: toClientError("save note", error) };
+  }
+
+  revalidatePath("/formulas");
+  revalidatePath("/cheatsheet");
+  return { success: true, data: { savedAt: data.updated_at } };
+}
+
+export async function deleteFormulaNoteAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  const userId = await requireUserId();
+  if (!userId) {
+    return { success: false, error: "You must be signed in." };
+  }
+
+  const slug = readString(formData, "slug");
+  if (!slug) {
+    return { success: false, error: "Missing formula reference." };
+  }
+
+  const { error } = await supabaseAdmin
+    .from("formula_notes")
+    .delete()
+    .eq("formula_id", slug)
+    .eq("user_id", userId);
+
+  if (error) {
+    return { success: false, error: toClientError("delete note", error) };
+  }
+
+  revalidatePath("/formulas");
+  revalidatePath("/cheatsheet");
+  return { success: true, data: undefined };
+}
+
+/** Bulk read so the vault can render every note in one round trip. */
+export async function getFormulaNotesAction(): Promise<
+  Record<string, string>
+> {
+  const userId = await requireUserId();
+  if (!userId) {
+    return {};
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("formula_notes")
+    .select("formula_id, content")
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("[formulax] read notes", error);
+    return {};
+  }
+
+  const notes: Record<string, string> = {};
+  for (const row of (data as { formula_id: string; content: string }[] | null) ?? []) {
+    notes[row.formula_id] = row.content;
+  }
+  return notes;
+}

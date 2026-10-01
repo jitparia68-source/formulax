@@ -79,7 +79,7 @@ BEGIN
     SELECT table_name, column_name
     FROM information_schema.columns
     WHERE table_schema = 'public'
-      AND table_name IN ('formulas', 'saved_bookmarks', 'lab_runs')
+      AND table_name IN ('formulas', 'saved_bookmarks', 'lab_runs', 'formula_notes')
       AND column_name = 'user_id'
       AND data_type <> 'text'
   LOOP
@@ -181,6 +181,26 @@ CREATE INDEX IF NOT EXISTS lab_runs_user_created_idx
   ON public.lab_runs (user_id, created_at DESC);
 
 -- ---------------------------------------------------------------------------
+-- formula_notes
+-- ---------------------------------------------------------------------------
+-- One study note per user per formula, so the vault becomes a workspace rather than a
+-- static list ("prof said this is on Midterm 2", "convert L to millihenries first").
+-- `user_id` is TEXT because Clerk user ids are strings, and there is deliberately no
+-- foreign key to a users table: Clerk owns identity and the local one was removed.
+-- `formula_id` follows `saved_bookmarks` in referencing `formulas(slug)`, so deleting a
+-- custom formula takes its note with it.
+CREATE TABLE IF NOT EXISTS public.formula_notes (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    TEXT NOT NULL,
+  formula_id TEXT NOT NULL REFERENCES public.formulas(slug) ON DELETE CASCADE,
+  content    TEXT NOT NULL CHECK (length(content) BETWEEN 1 AND 4000),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT formula_notes_user_formula_key UNIQUE (user_id, formula_id)
+);
+
+CREATE INDEX IF NOT EXISTS formula_notes_user_id_idx ON public.formula_notes (user_id);
+
+-- ---------------------------------------------------------------------------
 -- Baseline content
 -- ---------------------------------------------------------------------------
 INSERT INTO public.formulas
@@ -249,7 +269,9 @@ ON CONFLICT (slug) DO UPDATE SET
 ALTER TABLE public.formulas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.saved_bookmarks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lab_runs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.formula_notes ENABLE ROW LEVEL SECURITY;
 
 REVOKE ALL ON public.formulas FROM anon, authenticated;
 REVOKE ALL ON public.saved_bookmarks FROM anon, authenticated;
 REVOKE ALL ON public.lab_runs FROM anon, authenticated;
+REVOKE ALL ON public.formula_notes FROM anon, authenticated;
