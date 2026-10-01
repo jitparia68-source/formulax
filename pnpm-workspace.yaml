@@ -1,3 +1,12 @@
+# pnpm 11 requires every dependency with an install script to be explicitly allowed or
+# denied, otherwise it fails with ERR_PNPM_IGNORED_BUILDS.
+#
+# All four below are denied on purpose: the first two are native/image pipelines that
+# Next.js does not need here, and the last two only print a funding banner on postinstall.
+# Tesseract.js is safe to skip because the browser build fetches its worker and wasm core
+# from a CDN at runtime, so nothing is needed from a local postinstall.
 allowBuilds:
   sharp: false
   unrs-resolver: false
+  core-js: false
+  tesseract.js: false
